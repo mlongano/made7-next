@@ -5,15 +5,43 @@ import axios from 'axios';
 
 function Home ( { result, error } ) {
   if ( error ) {
-    return <div>Error!</div>;
+    return <div className="h-screen flex justify-center items-center" ><p className="text-7xl text-red-900 m-auto">Error! { error }</p></div>;
   } else if ( !result ) {
     return <div>Loading...</div>;
   }
-  const caratteristiche = result.data.map( c => ( {
+  const voci = result.voci.map( v => ( {
+    id: v.id,
+    nome: v.attributes.nome,
+    descrizione: v.attributes.Descrizione,
+    slug: v.attributes.slug,
+    cover: v.attributes.cover.data?.attributes.url,
+    categoria: v.attributes.categoria.data?.attributes.nome,
+    caratteristiche: v.attributes.caratteristiche.data?.map( c => c.attributes ),
+    allergeni: v.attributes.allergeni.data?.map( a => a.attributes ),
+    prezzo: v.attributes.prezzo,
+
+  } ) );
+  const caratteristiche = result.caratteristiche.map( c => ( {
       id: c.id,
       nome: c.attributes.nome,
-      icona: c.attributes.icona.data.attributes.url,
+      slug: c.attributes.slug,
+      icona: c.attributes.icona.data?.attributes.url,
   } ) );
+  const allergeni = result.allergeni.map( a => ( {
+      id: a.id,
+      nome: a.attributes.nome,
+      slug: a.attributes.slug,
+      descrizione: a.attributes.descrizione,
+      cover: a.attributes.cover.data?.attributes.url,
+  } ) );
+  const categorie = result.categorie.map( c => ( {
+      id: c.id,
+      nome: c.attributes.nome,
+      slug: c.attributes.slug,
+      descrizione: c.attributes.descrizione,
+      cover: c.attributes.cover.data?.attributes.url,
+  } ) );
+
 
   return (
     <div className={styles.container}>
@@ -62,14 +90,37 @@ function Home ( { result, error } ) {
             </p>
           </a>
         </div>
-        <h2 className="text-center">Caratteristiche</h2>
-
+        <h2 className={styles.titolo}>Voci del menù</h2>
         <ul>
-          { caratteristiche.map( a => (
-            <li className="flex items-center justify-center" key={a.id}>
-              <img className="h-4 mr-2" src={`http://localhost:1337${a.icona}`} alt={a.nome} />{a.nome}
+          {voci.map( v => (
+            <li className="flex items-center justify-center" key={v.id}>
+              <img className="h-4 mr-2" src={`http://localhost:1337${v.cover}`} alt={v.nome} />{v.nome}
             </li>
-          ) ) }
+          ) )}
+        </ul>
+        <h2 className={styles.titolo}>Categorie</h2>
+        <ul>
+          {categorie.map( c => (
+            <li className="flex items-center justify-center" key={c.id}>
+              <img className="h-4 mr-2" src={`http://localhost:1337${c.cover}`} alt={c.nome} />{c.nome}
+            </li>
+          ) )}
+        </ul>
+        <h2 className={styles.titolo}>Allergeni</h2>
+        <ul>
+          {allergeni.map( a => (
+            <li className="flex items-center justify-center" key={a.id}>
+              {a.nome}
+            </li>
+          ) )}
+        </ul>
+        <h2 className={styles.titolo}>Caratteristiche</h2>
+        <ul>
+          {caratteristiche.map( c => (
+            <li className="flex items-center justify-center" key={c.id}>
+              <img className="h-4 mr-2" src={`http://localhost:1337${c.icona}`} alt={c.nome} />{c.nome}
+            </li>
+          ) )}
         </ul>
 
       </main>
@@ -92,12 +143,38 @@ function Home ( { result, error } ) {
 
 export async function getStaticProps () {
   try {
-    const res = await axios.get( 'http://localhost:1337/api/caratteristiche?populate=icona' );
-    const result = res.data;
-    return { props: { result, error: null } };
+    const vociPromise = axios.get( 'http://localhost:1337/api/voci-del-menu?populate=*' );
+    const caratteristichePromise = axios.get( 'http://localhost:1337/api/caratteristiche?populate=*' );
+    const categoriePromise = axios.get( 'http://localhost:1337/api/categorie?populate=*' );
+    const allergeniPromise = axios.get( 'http://localhost:1337/api/allergeni?populate=*' );
+    const [ vociRaw, caratteristicheRaw, categorieRaw, allergeniRaw ] = await Promise
+      .all( [ vociPromise, caratteristichePromise, categoriePromise, allergeniPromise ] );
+    const voci = vociRaw.data.data;
+    const caratteristiche = caratteristicheRaw.data.data;
+    const categorie = categorieRaw.data.data;
+    const allergeni = allergeniRaw.data.data;
+
+    return {
+      props: {
+        result: {
+          voci,
+          caratteristiche,
+          categorie,
+          allergeni,
+        },
+        error: null
+      },
+    };
   } catch ( error ) {
-    return { props: { result: null, error: error } };
+
+    return {
+      props: {
+        result: null,
+        error: error.message,
+      },
+    };
   }
 }
+
 
   export default Home;

@@ -29,6 +29,10 @@
   @apply m-0 text-tl;
 }
 
+.titolo {
+  @apply capitalize text-2xl text-indigo-500 mt-4;
+}
+
 .title,
 .description {
   @apply text-center;
