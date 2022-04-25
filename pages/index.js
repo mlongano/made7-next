@@ -1,8 +1,20 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import axios from 'axios';
 
-export default function Home() {
+function Home ( { result, error } ) {
+  if ( error ) {
+    return <div>Error!</div>;
+  } else if ( !result ) {
+    return <div>Loading...</div>;
+  }
+  const caratteristiche = result.data.map( c => ( {
+      id: c.id,
+      nome: c.attributes.nome,
+      icona: c.attributes.icona.data.attributes.url,
+  } ) );
+
   return (
     <div className={styles.container}>
       <Head>
@@ -23,7 +35,7 @@ export default function Home() {
 
         <div className={styles.grid}>
           <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
+            <h2 className='text-5xl font-bold text-red-800'>Documentation &rarr;</h2>
             <p>Find in-depth information about Next.js features and API.</p>
           </a>
 
@@ -50,6 +62,16 @@ export default function Home() {
             </p>
           </a>
         </div>
+        <h2 className="text-center">Caratteristiche</h2>
+
+        <ul>
+          { caratteristiche.map( a => (
+            <li className="flex items-center justify-center" key={a.id}>
+              <img className="h-4 mr-2" src={`http://localhost:1337${a.icona}`} alt={a.nome} />{a.nome}
+            </li>
+          ) ) }
+        </ul>
+
       </main>
 
       <footer className={styles.footer}>
@@ -67,3 +89,15 @@ export default function Home() {
     </div>
   )
 }
+
+export async function getStaticProps () {
+  try {
+    const res = await axios.get( 'http://localhost:1337/api/caratteristiche?populate=icona' );
+    const result = res.data;
+    return { props: { result, error: null } };
+  } catch ( error ) {
+    return { props: { result: null, error: error } };
+  }
+}
+
+  export default Home;
